@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pantau Ajar</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <nav class="sidebar">
+    <div class="brand">
+      <div class="display">Pantau Ajar</div>
+      <div class="tagline">arsip &amp; administrasi kelas</div>
+    </div>
+    <div class="nav-tab active" data-page="dashboard"><span class="tab-index">01</span> Dashboard</div>
+    <div class="nav-tab" data-page="dokumen"><span class="tab-index">02</span> Dokumen Pembelajaran</div>
+    <div class="nav-tab" data-page="absensi"><span class="tab-index">03</span> Absensi</div>
+    <div class="nav-tab" data-page="nilai"><span class="tab-index">04</span> Nilai</div>
+    <div class="nav-tab" data-page="catatan"><span class="tab-index">05</span> Catatan Siswa</div>
+    <div class="nav-tab" data-page="kelas"><span class="tab-index">06</span> Kelas &amp; Siswa</div>
+    <div class="sidebar-footer">Tersambung ke Google Sheets<br>via Apps Script</div>
+  </nav>
+
+  <main>
+    <div id="configBanner" class="config-banner">
+      Belum terhubung ke backend. Buka <span class="mono">app.js</span> dan isi <span class="mono">GAS_URL</span> dengan URL Web App Apps Script kamu.
+    </div>
+    <div id="pageContent"></div>
+  </main>
+</div>
+
+<div id="modalRoot"></div>
+<div id="toast" class="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
