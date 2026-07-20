@@ -1,7 +1,7 @@
 // ====================== CONFIG ======================
 // Tempel URL Web App Apps Script kamu di sini (Deploy > New deployment > Web app)
 const CONFIG = {
-  GAS_URL: 'https://script.google.com/macros/s/AKfycbzIIl31apBKiOn__0luaiFTgjmeXjZz3SHli65y981HK25V7DoBIjpbnsIWsIkZiDHP/exec'
+  GAS_URL: 'https://script.google.com/macros/s/AKfycbzBrKQ7EG352TYGKJvhYY53YqyCM6pnAHuGXUf6XIePMnK6dFv-qP6hR7jPhrg7r8s/exec'
 };
 
 const SEMESTER_OPTIONS = ['Ganjil', 'Genap'];
