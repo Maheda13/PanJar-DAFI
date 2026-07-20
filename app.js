@@ -13,18 +13,44 @@ async function api(action, data = {}, method = 'GET') {
     document.getElementById('configBanner').classList.add('show');
     throw new Error('GAS_URL belum dikonfigurasi. Lihat README.');
   }
-  let res;
-  if (method === 'GET') {
-    const qs = new URLSearchParams({ action, ...data }).toString();
-    res = await fetch(`${CONFIG.GAS_URL}?${qs}`);
-  } else {
-    res = await fetch(CONFIG.GAS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action, data })
-    });
+  if (!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(CONFIG.GAS_URL.trim())) {
+    throw new Error('Format GAS_URL tampak salah. URL harus diakhiri "/exec" (bukan "/dev"), disalin dari Deploy > Manage deployments di Apps Script.');
   }
-  const json = await res.json();
+
+  let res;
+  try {
+    if (method === 'GET') {
+      const qs = new URLSearchParams({ action, ...data }).toString();
+      res = await fetch(`${CONFIG.GAS_URL}?${qs}`);
+    } else {
+      res = await fetch(CONFIG.GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action, data })
+      });
+    }
+  } catch (networkErr) {
+    // "Failed to fetch" muncul di sini — hampir selalu bukan bug kode,
+    // tapi deployment Apps Script yang belum bisa diakses dari luar.
+    throw new Error(
+      'Gagal menghubungi server (Failed to fetch). Kemungkinan penyebab: ' +
+      '(1) deployment Apps Script belum di-set "Who has access: Anyone", ' +
+      '(2) URL yang dipakai masih versi "/dev" bukan "/exec", atau ' +
+      '(3) belum redeploy versi baru setelah mengubah Code.gs. Lihat README bagian Setup.'
+    );
+  }
+
+  if (!res.ok) {
+    throw new Error(`Server merespons dengan error (HTTP ${res.status}). Coba redeploy Apps Script sebagai versi baru.`);
+  }
+
+  let json;
+  try {
+    json = await res.json();
+  } catch (parseErr) {
+    throw new Error('Respons server tidak berupa JSON yang valid. Pastikan doGet/doPost di Code.gs mengembalikan ContentService JSON, dan deployment sudah versi terbaru.');
+  }
+
   if (!json.success) throw new Error(json.error || 'Terjadi kesalahan pada server');
   return json.data;
 }
@@ -547,7 +573,10 @@ async function renderKelas() {
       </div>
 
       <div class="card">
-        <div class="section-label" style="margin-top:0;">Daftar Siswa</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div class="section-label" style="margin-top:0;">Daftar Siswa</div>
+          <button class="btn btn-sm" id="btnImportSiswa" type="button">Import Banyak Siswa</button>
+        </div>
         <select id="ksKelasFilter" class="filter-select" style="margin-bottom:12px;">
           <option value="">Semua Kelas</option>${kelasOptions(filterKelas, false)}
         </select>
@@ -602,6 +631,33 @@ async function renderKelas() {
     toast('Siswa dihapus');
     renderKelas();
   }));
+
+  document.getElementById('btnImportSiswa').addEventListener('click', () => importSiswaModal());
+}
+
+function importSiswaModal() {
+  const body = `
+    <div class="field">
+      <label>Kelas Tujuan</label>
+      <select name="kelas" required>${kelasOptions('', false)}</select>
+    </div>
+    <div class="field">
+      <label>Daftar Siswa</label>
+      <textarea name="daftar" rows="10" required placeholder="Satu siswa per baris. Format bebas:&#10;Ahmad Fauzi, 1001&#10;Budi Santoso, 1002&#10;Citra Dewi"></textarea>
+      <div class="doc-notes" style="margin-top:6px;">Satu nama per baris. NIS opsional, pisahkan dengan koma atau tab setelah nama.</div>
+    </div>
+  `;
+  openModal('Import Banyak Siswa', body, async data => {
+    const lines = data.daftar.split('\n').map(l => l.trim()).filter(Boolean);
+    const records = lines.map(line => {
+      const parts = line.split(/,|\t/).map(p => p.trim());
+      return { nama: parts[0], nis: parts[1] || '' };
+    });
+    if (!records.length) throw new Error('Tidak ada baris yang bisa diimpor');
+    const result = await api('addSiswaBulk', { kelas: data.kelas, records: JSON.stringify(records) }, 'POST');
+    toast(`${result.imported} siswa berhasil diimpor`);
+    renderKelas();
+  }, 'Import');
 }
 
 // ====================== INIT ======================
